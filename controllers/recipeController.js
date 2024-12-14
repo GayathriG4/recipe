@@ -1,4 +1,4 @@
-// Import Recipe model
+const mongoose = require('mongoose');
 const Recipe = require('../models/recipe');
 
 const recipeController = {
@@ -12,18 +12,18 @@ const recipeController = {
     },
     getRecipeByID: async (request, response) => {
         try {
-            // Get the recipe ID from the request parameters
             const { id } = request.params;
 
-            // Find the document for the matching ID
-            const recipe = await Recipe.findById(id);
-
-            // If no document is found, return a 404 Not Found status code
-            if (!recipe) {
-                return response.status(404).json({ message: 'Recipe not found' });
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return response.status(400).json({ message: 'Invalid recipe ID.' });
             }
 
-            // If a document is found, return a 200 OK status code and the document
+            const recipe = await Recipe.findById(id);
+
+            if (!recipe) {
+                return response.status(404).json({ message: 'Recipe not found.' });
+            }
+
             response.status(200).json(recipe);
         } catch (error) {
             response.status(500).json({ message: error.message });
@@ -31,10 +31,12 @@ const recipeController = {
     },
     createRecipe: async (request, response) => {
         try {
-            // Extract the recipe details from the request body
             const { name, description, ingredients, instructions, cookingTime, servings } = request.body;
 
-            // Create a new recipe object with the extracted details
+            if (!name || !description || !ingredients || !instructions || !cookingTime || !servings) {
+                return response.status(400).json({ message: 'All fields are required.' });
+            }
+
             const newRecipe = new Recipe({
                 name,
                 description,
@@ -44,69 +46,59 @@ const recipeController = {
                 servings
             });
 
-            // Save the new recipe object to the database
             await newRecipe.save();
-
-            // Send a 201 Created status code and the new recipe object
-            response.status(201).json({ message: 'Recipe created successfully' });
+            response.status(201).json({ message: 'Recipe created successfully', recipe: newRecipe });
         } catch (error) {
             response.status(500).json({ message: error.message });
         }
     },
     updateRecipe: async (request, response) => {
         try {
-            // Get the recipe ID from the request parameters
             const { id } = request.params;
+            const updates = request.body;
 
-            // Extract the recipe details from the request body
-            const { name, description, ingredients, instructions, cookingTime, servings } = request.body;
-
-            // Find the document for the matching ID
-            const recipe = await Recipe.findById(id);
-
-            // If no document is found, return a 404 Not Found status code
-            if (!recipe) {
-                return response.status(404).json({ message: 'Recipe not found' });
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return response.status(400).json({ message: 'Invalid recipe ID.' });
             }
 
-            // Update the recipe fields
-            recipe.name = name || recipe.name;
-            recipe.description = description || recipe.description;
-            recipe.ingredients = ingredients || recipe.ingredients;
-            recipe.instructions = instructions || recipe.instructions;
-            recipe.cookingTime = cookingTime || recipe.cookingTime;
-            recipe.servings = servings || recipe.servings;
+            if (!Object.keys(updates).length) {
+                return response.status(400).json({ message: 'No fields provided to update.' });
+            }
 
-            // Save the updated document to the database
-            await recipe.save();
+            const updatedRecipe = await Recipe.findByIdAndUpdate(
+                id,
+                { $set: updates },
+                { new: true, runValidators: true }
+            );
 
-            // Send a 200 OK status code and the updated document
-            response.status(200).json({ message: 'Recipe updated successfully', recipe });
+            if (!updatedRecipe) {
+                return response.status(404).json({ message: 'Recipe not found.' });
+            }
+
+            response.status(200).json({ message: 'Recipe updated successfully', recipe: updatedRecipe });
         } catch (error) {
-            response.status(500).json({ message: error.message });
+            response.status(500).json({ message: 'Failed to update recipe.', error: error.message });
         }
     },
-   
-    
     deleteRecipe: async (request, response) => {
         try {
-            // Get the recipe ID from the request parameters
             const { id } = request.params;
 
-            // Find the document for the matching ID and delete it
-            const recipe = await Recipe.findByIdAndDelete(id);
-
-            // If no document is found, return a 404 Not Found status code
-            if (!recipe) {
-                return response.status(404).json({ message: 'Recipe not found' });
+            if (!mongoose.Types.ObjectId.isValid(id)) {
+                return response.status(400).json({ message: 'Invalid recipe ID.' });
             }
 
-            // Send a 200 OK status code
+            const recipe = await Recipe.findByIdAndDelete(id);
+
+            if (!recipe) {
+                return response.status(404).json({ message: 'Recipe not found.' });
+            }
+
             response.status(200).json({ message: 'Recipe deleted successfully' });
         } catch (error) {
             response.status(500).json({ message: error.message });
         }
     }
-}
+};
 
 module.exports = recipeController;
