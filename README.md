@@ -13,3 +13,6 @@ Node.js: Server-side JavaScript runtime. Express.js: Web framework for handling 
 API Endpoints
 
 Recipes Method Endpoint Description GET /api/v1/recipes Get all recipes GET /api/v1/recipes/:id Get a specific recipe by ID POST /api/v1/recipes Create a new recipe PUT /api/v1/recipes/:id Update an existing recipe by ID DELETE /api/v1/recipes/:id Delete a recipe by ID
+
+POSTMAN DOCUMENTATION URL :
+https://documenter.getpostman.com/view/38564048/2sAYHzFhaS
